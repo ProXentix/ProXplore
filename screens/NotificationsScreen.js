@@ -100,9 +100,14 @@ export default function NotificationsScreen() {
                     </TouchableOpacity>
                     <Text className="text-xl font-bold text-slate-900">Notifications</Text>
                 </View>
-                <TouchableOpacity onPress={markAllAsRead} className="bg-primary/10 px-3 py-1.5 rounded-full">
-                    <Text className="text-xs font-bold text-primary">Mark all as read</Text>
-                </TouchableOpacity>
+                <View className="flex-row gap-2">
+                    <TouchableOpacity onPress={markAllAsRead} className="bg-primary/10 px-3 py-1.5 rounded-full">
+                        <Text className="text-xs font-bold text-primary">Read All</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setNotifications([])} className="bg-red-50 px-3 py-1.5 rounded-full">
+                        <Text className="text-xs font-bold text-red-500">Clear</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}>

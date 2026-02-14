@@ -46,7 +46,10 @@ export default function ProfileScreen() {
                                 resizeMode="cover"
                             />
                         </View>
-                        <TouchableOpacity className="absolute bottom-0 right-0 bg-primary w-8 h-8 rounded-full items-center justify-center border-2 border-white shadow-sm">
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('EditProfile')}
+                            className="absolute bottom-0 right-0 bg-primary w-8 h-8 rounded-full items-center justify-center border-2 border-white shadow-sm"
+                        >
                             <MaterialIcons name="edit" size={14} color="white" />
                         </TouchableOpacity>
                     </View>

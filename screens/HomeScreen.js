@@ -2,11 +2,13 @@ import React from 'react';
 import { View, Text, Image, TextInput, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { userData, weatherData, trendingData, languages } from '../data';
 import Logo from '../components/Logo';
 
 
 export default function HomeScreen() {
+    const navigation = useNavigation();
     return (
         <SafeAreaView className="flex-1 bg-background-light pt-8">
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
@@ -33,7 +35,10 @@ export default function HomeScreen() {
                             <Text className="text-xs font-bold text-slate-800">{weatherData.temp}</Text>
                             <Text className="text-[10px] opacity-60 text-slate-600">{weatherData.location}</Text>
                         </View>
-                        <TouchableOpacity className="w-10 h-10 rounded-full bg-white/70 items-center justify-center shadow-sm border border-white/40">
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('Notifications')}
+                            className="w-10 h-10 rounded-full bg-white/70 items-center justify-center shadow-sm border border-white/40"
+                        >
                             <MaterialIcons name="notifications" size={20} color="#475569" />
                         </TouchableOpacity>
                     </View>

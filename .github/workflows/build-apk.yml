@@ -26,9 +26,6 @@ jobs:
       - name: Install EAS CLI
         run: npm install -g eas-cli
 
-      - name: Initialize Repo
-        run: eas init
-
       - name: Verify Expo Login
         run: eas whoami
         env:

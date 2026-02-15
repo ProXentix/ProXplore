@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, TextInput, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -9,6 +9,15 @@ import Logo from '../components/Logo';
 
 export default function HomeScreen() {
     const navigation = useNavigation();
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const handleSearch = () => {
+        if (searchQuery.trim()) {
+            navigation.navigate('SearchResult', { query: searchQuery.trim() });
+            setSearchQuery('');
+        }
+    };
+
     return (
         <SafeAreaView className="flex-1 bg-background-light pt-8">
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
@@ -30,11 +39,14 @@ export default function HomeScreen() {
                     </View>
 
                     <View className="flex-row items-center gap-2">
-                        <View className="bg-white/70 rounded-full px-4 py-2 flex-row items-center gap-2 shadow-sm border border-white/40">
+                        <TouchableOpacity 
+                            onPress={() => navigation.navigate('Weather')}
+                            className="bg-white/70 rounded-full px-4 py-2 flex-row items-center gap-2 shadow-sm border border-white/40"
+                        >
                             <MaterialIcons name="wb-sunny" size={18} color="#fb923c" />
                             <Text className="text-xs font-bold text-slate-800">{weatherData.temp}</Text>
                             <Text className="text-[10px] opacity-60 text-slate-600">{weatherData.location}</Text>
-                        </View>
+                        </TouchableOpacity>
                         <TouchableOpacity
                             onPress={() => navigation.navigate('Notifications')}
                             className="w-10 h-10 rounded-full bg-white/70 items-center justify-center shadow-sm border border-white/40"
@@ -62,13 +74,24 @@ export default function HomeScreen() {
                             className="w-full h-16 pl-14 pr-14 rounded-full bg-white shadow-xl shadow-primary/5 text-lg font-medium text-slate-800"
                             placeholder="Search Bharat..."
                             placeholderTextColor="#94a3b8"
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            onSubmitEditing={handleSearch}
+                            returnKeyType="search"
                             style={{
                                 elevation: 4, // for android shadow
                             }}
                         />
-                        <TouchableOpacity className="absolute inset-y-0 right-4 justify-center h-16">
+                        <TouchableOpacity 
+                            onPress={handleSearch}
+                            className="absolute inset-y-0 right-4 justify-center h-16"
+                        >
                             <View className="p-2 rounded-full hover:bg-slate-100">
-                                <MaterialIcons name="mic" size={24} color="#94a3b8" />
+                                {searchQuery.length > 0 ? (
+                                    <MaterialIcons name="arrow-forward" size={24} color="#259df4" />
+                                ) : (
+                                    <MaterialIcons name="mic" size={24} color="#94a3b8" />
+                                )}
                             </View>
                         </TouchableOpacity>
                     </View>

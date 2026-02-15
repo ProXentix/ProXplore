@@ -45,18 +45,23 @@ const NotificationItem = ({ item, onPress }) => {
     return (
         <TouchableOpacity
             onPress={() => onPress(item)}
-            className={`bg-${!item.read ? 'white' : 'white/80'} rounded-2xl p-4 flex-row items-start gap-4 shadow-sm border border-slate-100 overflow-hidden relative mb-4`}
+            className={`bg-white rounded-2xl p-4 flex-row items-start gap-4 shadow-sm border border-slate-100 overflow-hidden relative mb-4`}
         >
-            {!item.read && <View className={`absolute left-0 top-0 bottom-0 w-1 ${colors.bar}`} />}
-            <View className={`w-12 h-12 ${colors.bg} rounded-xl items-center justify-center shadow-lg ${colors.shadow}`}>
-                <MaterialIcons name={item.icon} size={24} color="white" />
+            {/* Status Bar Indicator */}
+            <View className={`absolute left-0 top-0 bottom-0 w-1 ${!item.read ? colors.bar : 'bg-slate-200'}`} />
+
+            {/* Icon */}
+            <View className={`w-12 h-12 ${!item.read ? colors.bg : 'bg-slate-100'} rounded-xl items-center justify-center shadow-lg ${!item.read ? colors.shadow : 'shadow-none'}`}>
+                <MaterialIcons name={item.icon} size={24} color={!item.read ? "white" : "#94a3b8"} />
             </View>
+
+            {/* Content */}
             <View className="flex-1">
                 <View className="flex-row justify-between items-start">
-                    <Text className={`text-xs font-bold ${colors.text} uppercase tracking-tight`}>{item.title}</Text>
+                    <Text className={`text-xs font-bold ${!item.read ? colors.text : 'text-slate-500'} uppercase tracking-tight`}>{item.title}</Text>
                     <Text className="text-[10px] font-medium text-slate-400">{item.time}</Text>
                 </View>
-                <Text className={`text-sm font-bold text-slate-900 mt-0.5 leading-snug ${item.read ? 'text-slate-600' : ''}`}>{item.subtitle}</Text>
+                <Text className={`text-sm font-bold text-slate-900 mt-0.5 leading-snug ${item.read ? 'text-slate-600 font-medium' : ''}`}>{item.subtitle}</Text>
                 <Text className="text-[11px] text-slate-500 mt-1">{item.description}</Text>
             </View>
         </TouchableOpacity>

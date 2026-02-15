@@ -19,7 +19,7 @@ export default function HomeScreen() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-background-light pt-8">
+        <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark pt-8">
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
 
                 {/* Header */}
@@ -39,7 +39,7 @@ export default function HomeScreen() {
                     </View>
 
                     <View className="flex-row items-center gap-2">
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             onPress={() => navigation.navigate('Weather')}
                             className="bg-white/70 rounded-full px-4 py-2 flex-row items-center gap-2 shadow-sm border border-white/40"
                         >
@@ -82,7 +82,7 @@ export default function HomeScreen() {
                                 elevation: 4, // for android shadow
                             }}
                         />
-                        <TouchableOpacity 
+                        <TouchableOpacity
                             onPress={handleSearch}
                             className="absolute inset-y-0 right-4 justify-center h-16"
                         >

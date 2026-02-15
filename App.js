@@ -1,12 +1,13 @@
 import './global.css';
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, TouchableOpacity, Text, Platform } from 'react-native';
+import { View, TouchableOpacity, Text, Platform, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AppProvider, useAppContext } from './context/AppContext';
 
 // Screens
 import HomeScreen from './screens/HomeScreen';
@@ -45,7 +46,9 @@ const CustomScanButton = ({ children, onPress }) => (
 );
 
 function TabNavigator() {
+    // ... logic remains same
     const insets = useSafeAreaInsets();
+    const { isDarkMode } = useAppContext();
 
     return (
         <Tab.Navigator
@@ -58,7 +61,7 @@ function TabNavigator() {
                     left: 16,
                     right: 16,
                     elevation: 0,
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    backgroundColor: isDarkMode ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.95)',
                     borderRadius: 24,
                     height: 72,
                     borderTopWidth: 0,
@@ -85,7 +88,7 @@ function TabNavigator() {
                 options={{
                     tabBarIcon: ({ focused }) => (
                         <>
-                            <MaterialIcons name="home" size={28} color={focused ? "#259df4" : "#94a3b8"} />
+                            <MaterialIcons name="home" size={28} color={focused ? "#259df4" : (isDarkMode ? "#64748b" : "#94a3b8")} />
                             <Text className={`text-[10px] font-bold ${focused ? "text-primary" : "text-slate-400"}`}>Home</Text>
                         </>
                     ),
@@ -97,7 +100,7 @@ function TabNavigator() {
                 options={{
                     tabBarIcon: ({ focused }) => (
                         <>
-                            <MaterialIcons name="explore" size={28} color={focused ? "#259df4" : "#94a3b8"} />
+                            <MaterialIcons name="explore" size={28} color={focused ? "#259df4" : (isDarkMode ? "#64748b" : "#94a3b8")} />
                             <Text className={`text-[10px] font-bold ${focused ? "text-primary" : "text-slate-400"}`}>Xplore</Text>
                         </>
                     ),
@@ -121,7 +124,7 @@ function TabNavigator() {
                 options={{
                     tabBarIcon: ({ focused }) => (
                         <>
-                            <MaterialIcons name="bookmarks" size={28} color={focused ? "#259df4" : "#94a3b8"} />
+                            <MaterialIcons name="bookmarks" size={28} color={focused ? "#259df4" : (isDarkMode ? "#64748b" : "#94a3b8")} />
                             <Text className={`text-[10px] font-bold ${focused ? "text-primary" : "text-slate-400"}`}>Saved</Text>
                         </>
                     ),
@@ -133,7 +136,7 @@ function TabNavigator() {
                 options={{
                     tabBarIcon: ({ focused }) => (
                         <>
-                            <MaterialIcons name="widgets" size={28} color={focused ? "#259df4" : "#94a3b8"} />
+                            <MaterialIcons name="widgets" size={28} color={focused ? "#259df4" : (isDarkMode ? "#64748b" : "#94a3b8")} />
                             <Text className={`text-[10px] font-bold ${focused ? "text-primary" : "text-slate-400"}`}>Menu</Text>
                         </>
                     ),
@@ -143,10 +146,38 @@ function TabNavigator() {
     );
 }
 
-export default function App() {
+const LockScreen = ({ onUnlock }) => (
+    <View className="flex-1 items-center justify-center bg-primary">
+        <MaterialIcons name="lock" size={64} color="white" />
+        <Text className="text-white text-xl font-bold mt-4">ProXplore Locked</Text>
+        <TouchableOpacity
+            onPress={onUnlock}
+            className="mt-8 bg-white px-6 py-3 rounded-full"
+        >
+            <Text className="text-primary font-bold">Unlock with Biometrics</Text>
+        </TouchableOpacity>
+    </View>
+);
+
+
+function MainContent() {
+    const { isAuthenticated, isLoading, authenticate, isDarkMode } = useAppContext();
+
+    if (isLoading) {
+        return ( // Center loading indicator
+            <View className="flex-1 items-center justify-center bg-white dark:bg-slate-900">
+                {/* Importing ActivityIndicator from react-native above if not present */}
+            </View>
+        );
+    }
+
+    if (!isAuthenticated) {
+        return <LockScreen onUnlock={authenticate} />;
+    }
+
     return (
         <SafeAreaProvider>
-            <StatusBar style="dark" backgroundColor="lightblue" />
+            <StatusBar style={isDarkMode ? "light" : "dark"} backgroundColor={isDarkMode ? "#101a22" : "lightblue"} />
             <NavigationContainer>
                 <Stack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
                     <Stack.Screen name="Main" component={TabNavigator} />
@@ -162,5 +193,13 @@ export default function App() {
                 </Stack.Navigator>
             </NavigationContainer>
         </SafeAreaProvider>
+    );
+}
+
+export default function App() {
+    return (
+        <AppProvider>
+            <MainContent />
+        </AppProvider>
     );
 }

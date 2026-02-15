@@ -23,8 +23,9 @@ export default function SettingsScreen() {
         </View>
     );
 
-    const SettingItem = ({ icon, color, title, type = 'link', value, onValueChange, isLast }) => (
+    const SettingItem = ({ icon, color, title, type = 'link', value, onValueChange, isLast, onPress }) => (
         <TouchableOpacity
+            onPress={onPress}
             disabled={type === 'toggle'}
             className={`flex-row items-center p-4 ${!isLast ? 'border-b border-slate-100 dark:border-slate-700' : ''}`}
         >
@@ -124,11 +125,13 @@ export default function SettingsScreen() {
                         icon="info"
                         color="#64748b"
                         title="Terms of Service"
+                        onPress={() => navigation.navigate('TermsOfService')}
                     />
                     <SettingItem
                         icon="privacy-tip"
                         color="#64748b"
                         title="Privacy Policy"
+                        onPress={() => navigation.navigate('PrivacyPolicy')}
                     />
                     <SettingItem
                         icon="star"

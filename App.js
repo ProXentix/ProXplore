@@ -24,6 +24,8 @@ import EditProfileScreen from './screens/EditProfileScreen';
 import LanguageScreen from './screens/LanguageScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import HelpSupportScreen from './screens/HelpSupportScreen';
+import TermsOfServiceScreen from './screens/TermsOfServiceScreen';
+import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -56,29 +58,23 @@ function TabNavigator() {
                 headerShown: false,
                 tabBarShowLabel: false,
                 tabBarStyle: {
-                    position: 'absolute',
-                    bottom: Platform.OS === 'ios' ? 20 : 16 + insets.bottom,
-                    left: 16,
-                    right: 16,
-                    elevation: 0,
-                    backgroundColor: isDarkMode ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-                    borderRadius: 24,
-                    height: 72,
+                    backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
+                    height: 60 + (Platform.OS === 'ios' ? insets.bottom : insets.bottom > 0 ? insets.bottom : 10),
                     borderTopWidth: 0,
+                    paddingBottom: Platform.OS === 'ios' ? insets.bottom : insets.bottom > 0 ? insets.bottom : 10,
+                    paddingTop: 10,
+                    elevation: 8,
                     shadowColor: "#000",
                     shadowOffset: {
                         width: 0,
-                        height: 10,
+                        height: -2,
                     },
-                    shadowOpacity: 0.15,
-                    shadowRadius: 10,
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
                 },
                 tabBarItemStyle: {
                     display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center', // Center vertically within the item
-                    paddingTop: 12, // Push content down slightly if needed
+                    justifyContent: 'center',
                 },
             }}
         >
@@ -190,6 +186,8 @@ function MainContent() {
                     <Stack.Screen name="Language" component={LanguageScreen} />
                     <Stack.Screen name="Settings" component={SettingsScreen} />
                     <Stack.Screen name="HelpSupport" component={HelpSupportScreen} />
+                    <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
+                    <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
                 </Stack.Navigator>
             </NavigationContainer>
         </SafeAreaProvider>

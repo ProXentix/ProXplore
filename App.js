@@ -1,5 +1,6 @@
 import './global.css';
 import React from 'react';
+import { StatusBar } from 'expo-status-bar';
 import { View, TouchableOpacity, Text, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -145,6 +146,7 @@ function TabNavigator() {
 export default function App() {
     return (
         <SafeAreaProvider>
+            <StatusBar style="dark" backgroundColor="lightblue" />
             <NavigationContainer>
                 <Stack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
                     <Stack.Screen name="Main" component={TabNavigator} />

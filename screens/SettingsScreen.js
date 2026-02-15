@@ -3,21 +3,21 @@ import { View, Text, TouchableOpacity, ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useAppContext } from '../context/AppContext';
 
 export default function SettingsScreen() {
     const navigation = useNavigation();
+    const { isDarkMode, toggleTheme, isBiometricEnabled, toggleBiometric } = useAppContext();
 
-    // State for toggles
+    // State for other toggles
     const [pushNotifications, setPushNotifications] = useState(true);
     const [emailNotifications, setEmailNotifications] = useState(false);
-    const [darkMode, setDarkMode] = useState(false);
-    const [biometric, setBiometric] = useState(true);
     const [dataSaver, setDataSaver] = useState(false);
 
     const SettingSection = ({ title, children }) => (
         <View className="mb-6">
             <Text className="text-sm font-bold text-slate-500 mb-3 px-2 uppercase tracking-wide">{title}</Text>
-            <View className="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100">
+            <View className="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700">
                 {children}
             </View>
         </View>
@@ -26,12 +26,12 @@ export default function SettingsScreen() {
     const SettingItem = ({ icon, color, title, type = 'link', value, onValueChange, isLast }) => (
         <TouchableOpacity
             disabled={type === 'toggle'}
-            className={`flex-row items-center p-4 ${!isLast ? 'border-b border-slate-100' : ''}`}
+            className={`flex-row items-center p-4 ${!isLast ? 'border-b border-slate-100 dark:border-slate-700' : ''}`}
         >
             <View className="w-8 h-8 rounded-lg items-center justify-center mr-3" style={{ backgroundColor: color + '20' }}>
                 <MaterialIcons name={icon} size={20} color={color} />
             </View>
-            <Text className="flex-1 text-base font-semibold text-slate-700">{title}</Text>
+            <Text className="flex-1 text-base font-semibold text-slate-700 dark:text-slate-200">{title}</Text>
 
             {type === 'toggle' ? (
                 <Switch
@@ -47,12 +47,12 @@ export default function SettingsScreen() {
     );
 
     return (
-        <SafeAreaView className="flex-1 bg-background-light">
-            <View className="px-6 py-4 flex-row items-center gap-4 bg-white border-b border-slate-100">
-                <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2 rounded-full active:bg-slate-100">
-                    <MaterialIcons name="arrow-back-ios-new" size={20} color="#334155" />
+        <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
+            <View className="px-6 py-4 flex-row items-center gap-4 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
+                <TouchableOpacity onPress={() => navigation.goBack()} className="p-2 -ml-2 rounded-full active:bg-slate-100 dark:active:bg-slate-700">
+                    <MaterialIcons name="arrow-back-ios-new" size={20} color={isDarkMode ? "#fff" : "#334155"} />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-slate-900">Settings</Text>
+                <Text className="text-xl font-bold text-slate-900 dark:text-white">Settings</Text>
             </View>
 
             <ScrollView className="flex-1" contentContainerStyle={{ padding: 20 }}>
@@ -63,8 +63,8 @@ export default function SettingsScreen() {
                         color="#6366f1"
                         title="Dark Mode"
                         type="toggle"
-                        value={darkMode}
-                        onValueChange={setDarkMode}
+                        value={isDarkMode}
+                        onValueChange={toggleTheme}
                     />
                     <SettingItem
                         icon="notifications"
@@ -91,8 +91,8 @@ export default function SettingsScreen() {
                         color="#10b981"
                         title="Biometric ID"
                         type="toggle"
-                        value={biometric}
-                        onValueChange={setBiometric}
+                        value={isBiometricEnabled}
+                        onValueChange={toggleBiometric}
                     />
                     <SettingItem
                         icon="lock"

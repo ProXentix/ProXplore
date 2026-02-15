@@ -1,33 +1,52 @@
 {
   "expo": {
-    "name": "proxplore",
+    "name": "Proxplore",
     "slug": "proxplore",
     "version": "1.0.0",
+    "scheme": "proxplore",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/14d6e132-3012-4f88-82b5-6ef7d3514fc2"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.proxentix.proxplore",
+      "buildNumber": "1.0.0"
     },
     "android": {
       "package": "com.proxentix.proxplore",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": []
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "14d6e132-3012-4f88-82b5-6ef7d3514fc2"
+      }
+    }
   }
-}
+    }

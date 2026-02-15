@@ -8,37 +8,33 @@ on:
 
 jobs:
   build:
-    name: Build Android APK
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
-      # 3️⃣ Install dependencies
       - name: Install dependencies
         run: npm install
 
-      # 4️⃣ Install EAS CLI
       - name: Install EAS CLI
         run: npm install -g eas-cli
 
-      # 5️⃣ Login to Expo (Non-Interactive)
-      - name: Expo Login
+      - name: Initialize Repo
+        run: eas init
+
+      - name: Verify Expo Login
         run: eas whoami
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-      # 6️⃣ Build APK
-      - name: Build APK
+      - name: Build Android APK
         run: eas build --platform android --profile preview --non-interactive
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}

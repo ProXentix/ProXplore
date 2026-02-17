@@ -35,13 +35,16 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "permissions": []
+      "permissions": [],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth"
     ],
     "extra": {
       "eas": {
@@ -49,4 +52,4 @@
       }
     }
   }
-    }
+}

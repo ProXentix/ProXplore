@@ -3,101 +3,109 @@ use "std.io";
 use "std.fs";
 use "std.string";
 
-// Struct to represent a search result
+// Struct used in RAM
 struct SearchResult {
     title string;
     url string;
     content string;
 }
 
-// Function to parse a single line of NDJSON
-// Returns a SearchResult object or null if invalid
+// Global RAM Database (In-Memory Index)
+let memory_db = [];
+
+// Helper to manually parse a JSON line string
 func parse_json_line(line string) SearchResult {
-    // Very basic manual parsing for "title":"...", "url":"...", "content":"..."
-    // In a real system, use a proper JSON parser.
-    
-    // Helper to extract value by key
-    func extract_value(json string, key string) string {
-        let key_pattern = "\"" + key + "\": \"";
-        let start = json.index_of(key_pattern);
+    // Extracts value between "key": "VALUE"
+    func get_val(json string, key string) string {
+        let pattern = "\"" + key + "\": \"";
+        let start = json.index_of(pattern);
         if (start == -1) { return ""; }
         
-        start = start + key_pattern.length();
-        let end = json.index_of("\"", start);
-        
-        // Handle escaped quotes? For simplicity, assuming simple structure or next quote is end.
-        // A robust parser would march through characters handling escapes.
-        
+        start = start + pattern.length();
+        let end = json.index_of("\"", start); 
+        // Note: A real parser handles escaped quotes here, this is basic
         if (end == -1) { return ""; }
         
         return json.substring(start, end);
     }
     
-    let title = extract_value(line, "title");
-    let url = extract_value(line, "url");
-    let content = extract_value(line, "content");
+    let t = get_val(line, "title");
+    let u = get_val(line, "url");
+    let c = get_val(line, "content");
     
-    if (title == "" && url == "") { return null; }
+    if (u == "") { return null; }
     
-    return SearchResult {
-        title: title,
-        url: url,
-        content: content
-    };
+    return SearchResult { title: t, url: u, content: c };
 }
 
-func search_index(query string) string {
-    let results = []; // Array to store matching SearchResults
-    let query_lower = query.to_lower();
-    
-    // Open the index file
+// 1. Load Database into RAM (Speed Optimization)
+func load_database() void {
+    print("Loading index.json into RAM...");
     let file = fs.open("index.json", "r");
+    
     if (file == null) {
-        return "[]";
+        print("Warning: index.json not found. Please run crawler first.");
+        return;
     }
     
-    // Read line by line
-    // Assuming file.read_line() returns string or null on EOF
     let count = 0;
-    let max_results = 20;
-    
     while (true) {
-        let line = file.read_line();
-        if (line == null) { break; }
+        let line = file.read_line(); // Reads until newline
+        if (line == null) { break; } // EOF
         
-        // Parse JSON
-        let item = parse_json_line(line);
-        
-        if (item != null) {
-            // Check for match
-            // Case-insensitive inclusion check
-            if (item.title.to_lower().contains(query_lower) || item.content.to_lower().contains(query_lower)) {
-                results.push(item);
+        if (line.length() > 5) {
+            let item = parse_json_line(line);
+            if (item != null) {
+                memory_db.push(item);
                 count = count + 1;
             }
         }
+    }
+    file.close();
+    print("Database Loaded: " + count + " websites ready to search.");
+}
+
+// 2. Fast Search Function (No Disk I/O)
+func search_memory(query string) string {
+    let results = [];
+    let query_lower = query.to_lower();
+    let count = 0;
+    let i = 0;
+    
+    // Linear scan through RAM
+    while (i < memory_db.length()) {
+        let item = memory_db[i];
         
-        if (count >= max_results) { break; }
+        // Case-insensitive search in Title OR Content
+        let match_title = item.title.to_lower().contains(query_lower);
+        let match_content = item.content.to_lower().contains(query_lower);
+        
+        if (match_title || match_content) {
+            results.push(item);
+            count = count + 1;
+        }
+        
+        if (count >= 20) { break; } // Limit results for speed/pagination
+        i = i + 1;
     }
     
-    file.close();
-    
-    // Convert results array to JSON string
     return array_to_json(results);
 }
 
-// Helper to convert SearchResult array to JSON string
-func array_to_json(results array) string {
-    let json = "[";
+// Convert Array -> JSON String
+func array_to_json(arr array) string {
+    let json = "{\"results\": [";
     let i = 0;
-    while (i < results.length()) {
-        let item = results[i];
+    while (i < arr.length()) {
+        let item = arr[i];
         if (i > 0) { json = json + ","; }
         
-        json = json + "{\"title\": \"" + item.title + "\", \"url\": \"" + item.url + "\"}";
+        // Construct JSON object
+        json = json + "{\"title\": \"" + item.title + "\", \"url\": \"" + item.url + "\", \"snippet\": \"" + item.content + "\"}";
         i = i + 1;
     }
-    json = json + "]";
+    // Add fake metrics
+    json = json + "], \"metrics\": {\"total_hits\": " + arr.length() + "}}";
     return json;
 }
 
@@ -105,51 +113,46 @@ func handle_connection(conn net.Connection) void {
     let buffer = conn.read(1024);
     let request_str = string(buffer);
     
-    print("Received Request: " + request_str);
-
-    // Parse Request: "GET /search?q=query HTTP/1.1"
+    // Parse: GET /search?q=XYZ
     if (request_str.starts_with("GET /search?q=")) {
-        let query_start = 14; 
-        let query_end = request_str.index_of(" ", query_start);
-        if (query_end == -1) { query_end = request_str.length(); }
+        // Extract Query
+        let start = 14; 
+        let end = request_str.index_of(" ", start);
+        if (end == -1) { end = request_str.length(); }
         
-        let query_raw = request_str.substring(query_start, query_end);
+        let raw_q = request_str.substring(start, end);
+        let query = raw_q.replace("%20", " "); // Handle spaces
         
-        // Decode URL encoding (e.g., %20 -> space) if needed
-        // For now, using raw query
-        let query = query_raw.replace("%20", " ");
+        print("Search Query: " + query);
         
-        print("Searching for: " + query);
+        let json_body = search_memory(query);
         
-        let json_response = search_index(query);
-        
+        // Standard HTTP Response headers with CORS
         let response = "HTTP/1.1 200 OK\r\n" +
                        "Content-Type: application/json\r\n" +
-                       "Access-Control-Allow-Origin: *\r\n" + // CORS for React Native dev
-                       "Content-Length: " + json_response.length() + "\r\n" +
+                       "Access-Control-Allow-Origin: *\r\n" + 
+                       "Content-Length: " + json_body.length() + "\r\n" +
                        "\r\n" +
-                       json_response;
-                       
+                       json_body;
+        
         conn.write(response);
     } else {
-        let msg = "{\"error\": \"Not Found\"}";
-        let response = "HTTP/1.1 404 Not Found\r\n" +
-                       "Content-Type: application/json\r\n" +
-                       "Content-Length: " + msg.length() + "\r\n" +
-                       "\r\n" +
-                       msg;
-        conn.write(response);
+        conn.write("HTTP/1.1 404 Not Found\r\n\r\n");
     }
     
     conn.close();
 }
 
 func main() {
-    print("Starting ProXplore Search Server on port 8080...");
+    // Step 1: Load DB
+    load_database();
+
+    // Step 2: Start Server
+    print("ProXplore Server running on http://localhost:8080");
     let listener = net.listen("tcp", "0.0.0.0:8080");
     
     if (listener == null) {
-        print("Error: Could not bind to port 8080");
+        print("Error: Port 8080 busy.");
         return;
     }
 

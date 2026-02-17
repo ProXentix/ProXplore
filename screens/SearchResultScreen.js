@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, Image } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { explorePlaces } from '../data'; // Reusing explore places layout
 
 export default function SearchResultScreen({ route }) {
@@ -55,7 +56,12 @@ export default function SearchResultScreen({ route }) {
                 <View className="px-4 mb-4 mt-2">
                     <View className="bg-white rounded-2xl p-5 border border-purple-100 relative overflow-hidden shadow-sm">
                         {/* Decorative gradient background opacity */}
-                        <View className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400" />
+                        <LinearGradient
+                            colors={['#9333ea', '#ec4899', '#f97316']}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1 }}
+                        />
 
                         <View className="flex-row items-center gap-2 mb-3">
                             <View className="w-6 h-6 rounded-full bg-purple-100 items-center justify-center">

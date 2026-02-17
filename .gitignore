@@ -42,3 +42,7 @@ yarn-error.*
 
 # Firebase
 
+
+# ProXPL Runtime (not needed in repo)
+*.exe
+proxpl_extracted/

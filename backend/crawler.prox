@@ -1,4 +1,6 @@
 use "std.io";
+use "std.string";
+use "database"; // Import our database module
 
 // FFI Declarations for libcurl
 // Assuming a standard libc or libcurl shared object is available
@@ -8,76 +10,128 @@ extern "libcurl.so" "curl_easy_setopt" func curl_easy_setopt(handle pointer, opt
 extern "libcurl.so" "curl_easy_perform" func curl_easy_perform(handle pointer) int;
 extern "libcurl.so" "curl_easy_cleanup" func curl_easy_cleanup(handle pointer) void;
 
-// Constants for Curl (Mock values for example)
+// Constants for Curl (from curl.h)
 let CURLOPT_URL = 10002;
 let CURLOPT_FOLLOWLOCATION = 52;
+let CURLOPT_WRITEFUNCTION = 20011;
+let CURLOPT_WRITEDATA = 10001;
 
-// FFI Definitions for simple string splitting/parsing if native lib is limited
-// But we will use native ProXPL string methods if assumed available, 
-// otherwise we can construct parsing logic.
+// Global buffer to store fetched HTML content
+let global_html_buffer = "";
+
+// Callback function for Curl to write data
+// Signature: size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata);
+func write_callback(data pointer, size int, nmemb int, user_data pointer) int {
+    let total_size = size * nmemb;
+    
+    // Convert raw pointer data to string
+    // Assuming ProXPL has a way to create string from pointer and length
+    // If not, we simulate appending bytes.
+    let chunk = string(data, total_size); 
+    
+    global_html_buffer = global_html_buffer + chunk;
+    
+    return total_size;
+}
 
 func fetch_html(url string) string {
+    // Reset buffer
+    global_html_buffer = "";
+    
     // Initialize Curl
     curl_global_init(3); // CURL_GLOBAL_ALL
     let curl = curl_easy_init();
     
-    if (curl == 0) {
+    if (curl == null) { // Using null for pointer check
         print("Failed to init curl");
         return "";
     }
 
     // Set Options
-    // Note: In a real systems language, casting string to char* pointer for FFI is implicit or explicit.
-    // We assume ProXPL handles `url` string passing to `parameter pointer` gracefully or we'd need a c_string helper.
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
+    
+    // Set Write Callback
+    // Passing function pointer to `write_callback`
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+    
+    // We can pass user_data if needed, but using global for simplicity in prototype
+    // curl_easy_setopt(curl, CURLOPT_WRITEDATA, null); 
 
-    // Perform Request
-    // For simplicity in this FFI example, we print to stdout. 
-    // In a real impl, we'd set a write callback to capture the buffer.
     print("Fetching: " + url);
     let res = curl_easy_perform(curl);
     
     if (res != 0) {
-        print("Curl perform failed");
+        print("Curl perform failed with error code: " + res);
+    } else {
+        print("Fetch successful. Bytes: " + global_html_buffer.length());
     }
 
     curl_easy_cleanup(curl);
     
-    // Mock return since capturing stdout via FFI is complex without write_callback impl
-    // Returning dummy HTML for parsing demonstration
-    return "<html><head><title>Example Domain</title></head><body><h1>Hello World</h1></body></html>";
+    return global_html_buffer;
 }
 
-func parse_html(html string) void {
-    // Simple string splitting/parsing manually
-    // Find <title>
-    let title_start_tag = "<title>";
-    let title_end_tag = "</title>";
+// Simple HTML parsing logic
+// Extracts content between <tag> and </tag>
+func extract_tag_content(html string, tag string) string {
+    let start_tag = "<" + tag + ">";
+    let end_tag = "</" + tag + ">";
     
-    // Assuming string.index_of or similar exists
-    // Since not explicitly in spec, I'll write a pseudo logic or assume helper exists
-    // Usage: split(string, delimiter) -> array
+    let start_index = html.index_of(start_tag);
+    if (start_index == -1) { return ""; }
     
-    // Mock parsing for demonstration:
+    start_index = start_index + start_tag.length();
+    
+    let end_index = html.index_of(end_tag, start_index);
+    if (end_index == -1) { return ""; }
+    
+    return html.substring(start_index, end_index);
+}
+
+func parse_and_save(url string, html string) void {
     print("Parsing HTML...");
     
-    // Check if contains title
-    // Let's assume a native `find` or regex isn't in spec, doing a mock extraction
-    let title = "Example Domain"; // Extracted
-    let body = "Hello World";     // Extracted
-
-    print("Found Title: " + title);
-    print("Found Body Content: " + body);
+    let title = extract_tag_content(html, "title");
+    if (title == "") { 
+        title = "No Title Found"; 
+    }
     
-    // Here we would call database.save_result(...) ideally
-    // But since imports across files weren't fully detailed in spec (linking), 
-    // we print the action.
-    print("Saving to index...");
+    // Naive body extraction - getting everything in body
+    // In real world, we'd strip tags, scripts, styles etc.
+    let body = extract_tag_content(html, "body");
+    if (body == "") {
+        body = "No Body Content";
+    }
+    
+    // Clean up body (remove extra whitespace/newlines for cleaner storage)
+    // body = body.replace("\n", " ").trim(); // Assuming these exist
+    
+    print("Found Title: " + title);
+    
+    // Save to database
+    database.append_to_index(title, url, body);
 }
 
 func main() {
-    let url = "http://example.com";
-    let html = fetch_html(url);
-    parse_html(html);
+    // Seed URLs
+    let urls = [
+        "http://example.com",
+        "https://www.w3.org/",
+        "https://en.wikipedia.org/wiki/Main_Page",
+        "https://news.ycombinator.com/",
+        "https://github.com/explore"
+    ];
+    
+    let i = 0;
+    while (i < urls.length()) { // Assuming length() method on array
+        let url = urls[i];
+        let html = fetch_html(url);
+        
+        if (html.length() > 0) {
+            parse_and_save(url, html);
+        }
+        
+        i = i + 1;
+    }
 }

@@ -8,6 +8,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppProvider, useAppContext } from './context/AppContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Screens
 import HomeScreen from './screens/HomeScreen';
@@ -26,9 +27,12 @@ import SettingsScreen from './screens/SettingsScreen';
 import HelpSupportScreen from './screens/HelpSupportScreen';
 import TermsOfServiceScreen from './screens/TermsOfServiceScreen';
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
+import LoginScreen from './screens/LoginScreen';
+import SignupScreen from './screens/SignupScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+const AuthStack = createNativeStackNavigator();
 
 // Custom Floating Action Button for Scan
 const CustomScanButton = ({ children, onPress }) => (
@@ -48,7 +52,6 @@ const CustomScanButton = ({ children, onPress }) => (
 );
 
 function TabNavigator() {
-    // ... logic remains same
     const insets = useSafeAreaInsets();
     const { isDarkMode } = useAppContext();
 
@@ -155,19 +158,30 @@ const LockScreen = ({ onUnlock }) => (
     </View>
 );
 
-
 function MainContent() {
-    const { isAuthenticated, isLoading, authenticate, isDarkMode } = useAppContext();
+    const { isAuthenticated: isBiometricAuthenticated, isLoading: isBiometricLoading, authenticate, isDarkMode } = useAppContext();
+    const { currentUser, isLoading: isAuthLoading } = useAuth();
 
-    if (isLoading) {
-        return ( // Center loading indicator
+    if (isAuthLoading || isBiometricLoading) {
+        return (
             <View className="flex-1 items-center justify-center bg-white dark:bg-slate-900">
-                {/* Importing ActivityIndicator from react-native above if not present */}
+                <ActivityIndicator size="large" color="#007AFF" />
             </View>
         );
     }
 
-    if (!isAuthenticated) {
+    if (!currentUser) {
+        return (
+            <NavigationContainer>
+                <AuthStack.Navigator screenOptions={{ headerShown: false }}>
+                    <AuthStack.Screen name="Login" component={LoginScreen} />
+                    <AuthStack.Screen name="Signup" component={SignupScreen} />
+                </AuthStack.Navigator>
+            </NavigationContainer>
+        );
+    }
+
+    if (!isBiometricAuthenticated) {
         return <LockScreen onUnlock={authenticate} />;
     }
 
@@ -196,8 +210,10 @@ function MainContent() {
 
 export default function App() {
     return (
-        <AppProvider>
-            <MainContent />
-        </AppProvider>
+        <AuthProvider>
+            <AppProvider>
+                <MainContent />
+            </AppProvider>
+        </AuthProvider>
     );
 }

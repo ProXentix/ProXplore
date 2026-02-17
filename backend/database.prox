@@ -1,37 +1,77 @@
 use "std.io";
 use "std.fs";
+use "std.string"; // Assuming standard string lib for length, replace, etc.
 
 // Struct to hold search results
 struct Result {
     title string;
     url string;
+    content string; // Added content field for snippet/body
 }
 
-// Function to save a result to a file (acting as our database/index)
-func save_result(res Result) void {
-    // Open the file in append mode. 
-    // Assuming std.fs has an open function similar to other systems languages.
-    // In a real scenario, we might use FFI for fopen/fwrite if std.fs is limited.
+// Helper to escape special characters for JSON
+func escape_json(s string) string {
+    let result = "";
+    let len = s.length();
+    
+    // Iterate through string (assuming array-like access or iterator)
+    // Since ProXPL syntax for iteration isn't fully detailed, using a while loop with index
+    let i = 0;
+    while (i < len) {
+        let char = s[i]; // Access character
+        
+        if (char == '\"') {
+            result = result + "\\\"";
+        } else if (char == '\\') {
+            result = result + "\\\\";
+        } else if (char == '\n') {
+            result = result + "\\n";
+        } else if (char == '\r') {
+            result = result + "\\r";
+        } else if (char == '\t') {
+            result = result + "\\t";
+        } else {
+            result = result + char;
+        }
+        
+        i = i + 1;
+    }
+    
+    return result;
+}
+
+// Function to append a result to the index file (NDJSON)
+func append_to_index(title string, url string, content string) void {
+    // Escape fields to ensure valid JSON
+    let safe_title = escape_json(title);
+    let safe_url = escape_json(url);
+    // Truncate content if too long to save space/memory (optional, but good for search snippets)
+    let safe_content = escape_json(content); 
+
+    // Construct NDJSON string: {"title": "...", "url": "...", "content": "..."}
+    let json_entry = "{\"title\": \"" + safe_title + "\", \"url\": \"" + safe_url + "\", \"content\": \"" + safe_content + "\"}\n";
+    
+    // Open file in append mode
+    // error handling omitted for brevity/prototype, but recommended
     let file = fs.open("index.json", "a");
     
-    // Construct a simple JSON object string
-    // ProXPL string interpolation or concatenation wasn't explicitly defined, 
-    // so we'll assume + for concatenation or standard format.
-    let json_entry = "{\"title\": \"" + res.title + "\", \"url\": \"" + res.url + "\"}\n";
-    
-    // Write to file
-    file.write(json_entry);
-    file.close();
-    
-    print("Saved result: " + res.title);
+    if (file != null) {
+        file.write(json_entry);
+        file.close();
+        // Feedback to stdout
+        print("Indexed: " + safe_title);
+    } else {
+        print("Error: Could not open index.json for writing.");
+    }
 }
 
-// Entry point for testing this module
+// Entry point for testing/usage
 func main() {
-    let sample = Result {
-        title: "ProXplore Home",
-        url: "http://proxplore.com"
-    };
+    // This main is just for testing the database module standalone
+    print("Testing Database Module...");
     
-    save_result(sample);
+    append_to_index("ProXplore Home", "http://proxplore.com", "Welcome to the ProXplore search engine.");
+    append_to_index("Test Page with \"Quotes\"", "http://test.com", "This content has \n newlines and \"quotes\" to test escaping.");
+    
+    print("Done.");
 }

@@ -1,137 +1,119 @@
 use "std.io";
 use "std.string";
-use "database"; // Import our database module
+use "database"; // Imports database.prox
 
-// FFI Declarations for libcurl
-// Assuming a standard libc or libcurl shared object is available
+// --- FFI Declarations for libcurl ---
 extern "libcurl.so" "curl_global_init" func curl_global_init(flags long) int;
 extern "libcurl.so" "curl_easy_init" func curl_easy_init() pointer;
 extern "libcurl.so" "curl_easy_setopt" func curl_easy_setopt(handle pointer, option int, parameter pointer) int;
 extern "libcurl.so" "curl_easy_perform" func curl_easy_perform(handle pointer) int;
 extern "libcurl.so" "curl_easy_cleanup" func curl_easy_cleanup(handle pointer) void;
 
-// Constants for Curl (from curl.h)
+// Constants
 let CURLOPT_URL = 10002;
 let CURLOPT_FOLLOWLOCATION = 52;
 let CURLOPT_WRITEFUNCTION = 20011;
-let CURLOPT_WRITEDATA = 10001;
 
 // Global buffer to store fetched HTML content
 let global_html_buffer = "";
 
-// Callback function for Curl to write data
-// Signature: size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata);
+// Callback function for Curl to capture data into variable
 func write_callback(data pointer, size int, nmemb int, user_data pointer) int {
     let total_size = size * nmemb;
-    
-    // Convert raw pointer data to string
-    // Assuming ProXPL has a way to create string from pointer and length
-    // If not, we simulate appending bytes.
+    // Convert raw pointer data to string and append to global buffer
     let chunk = string(data, total_size); 
-    
     global_html_buffer = global_html_buffer + chunk;
-    
     return total_size;
 }
 
 func fetch_html(url string) string {
-    // Reset buffer
-    global_html_buffer = "";
+    global_html_buffer = ""; // Reset buffer
     
-    // Initialize Curl
-    curl_global_init(3); // CURL_GLOBAL_ALL
+    curl_global_init(3);
     let curl = curl_easy_init();
     
-    if (curl == null) { // Using null for pointer check
+    if (curl == null) {
         print("Failed to init curl");
         return "";
     }
 
-    // Set Options
+    // Configure Curl
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1);
-    
-    // Set Write Callback
-    // Passing function pointer to `write_callback`
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-    
-    // We can pass user_data if needed, but using global for simplicity in prototype
-    // curl_easy_setopt(curl, CURLOPT_WRITEDATA, null); 
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback); // Hook up the callback
 
     print("Fetching: " + url);
     let res = curl_easy_perform(curl);
     
-    if (res != 0) {
-        print("Curl perform failed with error code: " + res);
-    } else {
-        print("Fetch successful. Bytes: " + global_html_buffer.length());
-    }
-
     curl_easy_cleanup(curl);
+    
+    if (res != 0) {
+        print("Error fetching URL code: " + res);
+        return "";
+    }
     
     return global_html_buffer;
 }
 
-// Simple HTML parsing logic
-// Extracts content between <tag> and </tag>
-func extract_tag_content(html string, tag string) string {
-    let start_tag = "<" + tag + ">";
-    let end_tag = "</" + tag + ">";
-    
-    let start_index = html.index_of(start_tag);
+// Smart Parsing Logic (Handles <title class="..."> etc.)
+func extract_smart(html string, tag string) string {
+    // 1. Find "<tag"
+    let start_marker = "<" + tag;
+    let start_index = html.index_of(start_marker);
     if (start_index == -1) { return ""; }
     
-    start_index = start_index + start_tag.length();
+    // 2. Find the closing bracket ">" of the opening tag
+    let tag_close_index = html.index_of(">", start_index);
+    if (tag_close_index == -1) { return ""; }
     
-    let end_index = html.index_of(end_tag, start_index);
+    let content_start = tag_close_index + 1;
+    
+    // 3. Find closing tag "</tag>"
+    let end_marker = "</" + tag + ">";
+    let end_index = html.index_of(end_marker, content_start);
     if (end_index == -1) { return ""; }
     
-    return html.substring(start_index, end_index);
+    return html.substring(content_start, end_index);
 }
 
 func parse_and_save(url string, html string) void {
-    print("Parsing HTML...");
+    let title = extract_smart(html, "title");
+    let body = extract_smart(html, "body"); // Or "p", "div" based on need
     
-    let title = extract_tag_content(html, "title");
-    if (title == "") { 
-        title = "No Title Found"; 
-    }
+    if (title == "") { title = "No Title"; }
+    if (body == "") { body = "No Content Available"; }
     
-    // Naive body extraction - getting everything in body
-    // In real world, we'd strip tags, scripts, styles etc.
-    let body = extract_tag_content(html, "body");
-    if (body == "") {
-        body = "No Body Content";
-    }
-    
-    // Clean up body (remove extra whitespace/newlines for cleaner storage)
-    // body = body.replace("\n", " ").trim(); // Assuming these exist
-    
-    print("Found Title: " + title);
-    
-    // Save to database
+    // Save using Database Module
     database.append_to_index(title, url, body);
 }
 
 func main() {
-    // Seed URLs
+    // List of 10-20 Real Sites to Crawl
     let urls = [
-        "http://example.com",
-        "https://www.w3.org/",
-        "https://en.wikipedia.org/wiki/Main_Page",
+        "https://www.wikipedia.org/",
         "https://news.ycombinator.com/",
-        "https://github.com/explore"
+        "https://www.python.org/",
+        "https://reactnative.dev/",
+        "https://github.com/explore",
+        "https://stackoverflow.com/",
+        "https://www.reddit.com/r/programming/",
+        "https://dev.to/",
+        "https://techcrunch.com/",
+        "https://www.bbc.com/news/technology"
     ];
     
     let i = 0;
-    while (i < urls.length()) { // Assuming length() method on array
+    while (i < urls.length()) {
         let url = urls[i];
         let html = fetch_html(url);
         
-        if (html.length() > 0) {
+        if (html.length() > 100) { // Only save if we got substantial data
             parse_and_save(url, html);
+        } else {
+            print("Skipping empty response for: " + url);
         }
         
         i = i + 1;
     }
+    print("Crawling Completed.");
 }

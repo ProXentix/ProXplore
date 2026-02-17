@@ -1,35 +1,8 @@
-{
-    "title": "ProXplore - Home",
-    "url": "https://proxpl.in",
-    "content": "Welcome to ProXplore. The ultimate search engine for developers."
-}
-{
-    "title": "React Native - A framework for building native apps using React",
-    "url": "https://reactnative.dev",
-    "content": "React Native combines the best parts of native development with React, a best-in-class JavaScript library for building user interfaces."
-}
-{
-    "title": "Expo - Make any app. Run it everywhere",
-    "url": "https://expo.dev",
-    "content": "Expo is an open-source platform for making universal native apps for Android, iOS, and the web with JavaScript and React."
-}
-{
-    "title": "Python Programming Language",
-    "url": "https://python.org",
-    "content": "Python is a programming language that lets you work quickly and integrate systems more effectively."
-}
-{
-    "title": "Rust Programming Language",
-    "url": "https://rust-lang.org",
-    "content": "A language empowering everyone to build reliable and efficient software."
-}
-{
-    "title": "Taj Mahal - Wikipedia",
-    "url": "https://en.wikipedia.org/wiki/Taj_Mahal",
-    "content": "The Taj Mahal is an ivory-white marble mausoleum on the right bank of the river Yamuna in the Indian city of Agra."
-}
-{
-    "title": "Varanasi - The Spiritual Capital of India",
-    "url": "https://varanasi.nic.in",
-    "content": "Varanasi is a city on the banks of the river Ganges in Uttar Pradesh, India."
-}
+{"title": "ProXPL - The ProX Programming Language", "url": "https://proxpl.in", "content": "ProXPL is a modern programming language designed for system programming and web development. It features strong typing, memory safety, and excellent performance."}
+{"title": "Proxentix - Technology Solutions", "url": "https://proxentix.in", "content": "Proxentix provides cutting-edge technology solutions for businesses. We specialize in web development, mobile apps, and cloud infrastructure."}
+{"title": "Python Programming Language", "url": "https://python.org", "content": "Python is a high-level, interpreted programming language known for its simplicity and readability. Great for beginners and experts alike."}
+{"title": "GitHub - Where Software is Built", "url": "https://github.com", "content": "GitHub is the world's leading software development platform. Millions of developers use GitHub to build, share, and maintain software projects."}
+{"title": "Stack Overflow - Programming Q&A", "url": "https://stackoverflow.com", "content": "Stack Overflow is a question and answer site for professional and enthusiast programmers. Get answers to your coding questions."}
+{"title": "React - JavaScript Library", "url": "https://reactjs.org", "content": "React is a JavaScript library for building user interfaces. It's maintained by Facebook and a community of individual developers."}
+{"title": "Node.js - JavaScript Runtime", "url": "https://nodejs.org", "content": "Node.js is a JavaScript runtime built on Chrome's V8 engine. It enables server-side JavaScript execution."}
+{"title": "Docker - Container Platform", "url": "https://docker.com", "content": "Docker is a platform for developing, shipping, and running applications in containers. Simplify your deployment process."}

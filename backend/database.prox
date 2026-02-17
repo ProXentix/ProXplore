@@ -1,67 +1,38 @@
-use "std.io";
-use "std.fs";
 use "std.string";
 
-// Struct to hold search results
-struct Result {
-    title string;
-    url string;
-    content string;
-}
+// Database Module for ProXplore
+// Handles JSON escaping and NDJSON formatting
 
-// Helper to escape special characters for JSON
-// This prevents the DB from breaking if a title has "quotes" or newlines
-func escape_json(s string) string {
-    let result = "";
-    let len = s.length();
+// Escapes special characters for JSON strings
+func escape_json(input string) string {
+    let output = "";
     let i = 0;
-    
-    while (i < len) {
-        let char = s[i];
-        
-        if (char == '\"') {
-            result = result + "\\\""; // Escape quote
-        } else if (char == '\\') {
-            result = result + "\\\\"; // Escape backslash
-        } else if (char == '\n') {
-            result = result + " ";    // Replace newline with space
-        } else if (char == '\r') {
-            result = result + "";     // Remove carriage return
-        } else if (char == '\t') {
-            result = result + " ";    // Replace tab with space
+    while (i < input.length()) {
+        let char = input.substring(i, i + 1);
+        if (char == "\"") {
+            output = output + "\\\"";
+        } else if (char == "\\") {
+            output = output + "\\\\";
+        } else if (char == "\n") {
+            output = output + "\\n";
+        } else if (char == "\r") {
+            output = output + "\\r";
+        } else if (char == "\t") {
+            output = output + "\\t";
         } else {
-            result = result + char;
+            output = output + char;
         }
-        
         i = i + 1;
     }
-    
-    return result;
+    return output;
 }
 
-// Function to append a result to the index file (NDJSON format)
-func append_to_index(title string, url string, content string) void {
-    // 1. Clean and Escape Data
+// Formats a search result entry as a single NDJSON line
+func format_ndjson(title string, url string, content string) string {
     let safe_title = escape_json(title);
     let safe_url = escape_json(url);
-    
-    // Truncate content to 200 chars to save space (Snippet only)
     let safe_content = escape_json(content);
-    if (safe_content.length() > 200) {
-        safe_content = safe_content.substring(0, 200) + "...";
-    }
-
-    // 2. Format: {"title": "...", "url": "...", "content": "..."}
-    let json_entry = "{\"title\": \"" + safe_title + "\", \"url\": \"" + safe_url + "\", \"content\": \"" + safe_content + "\"}\n";
     
-    // 3. Append to file
-    let file = fs.open("index.json", "a");
-    
-    if (file != null) {
-        file.write(json_entry);
-        file.close();
-        print("[DB] Indexed: " + safe_title);
-    } else {
-        print("[DB] Error: Could not open index.json");
-    }
+    // NDJSON format: {"title": "...", "url": "...", "content": "..."}
+    return "{\"title\": \"" + safe_title + "\", \"url\": \"" + safe_url + "\", \"content\": \"" + safe_content + "\"}";
 }

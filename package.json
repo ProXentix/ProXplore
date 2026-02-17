@@ -38,6 +38,7 @@
   "private": true,
   "devDependencies": {
     "autoprefixer": "^10.4.24",
+    "fs-extra": "^11.3.3",
     "postcss": "^8.5.6"
   }
 }

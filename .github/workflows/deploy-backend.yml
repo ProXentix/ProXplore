@@ -18,9 +18,11 @@ jobs:
 
       - name: Download ProXPL Runtime
         run: |
-          echo "Downloading ProXPL for Linux..."
-          wget https://github.com/ProgrammerKR/ProXPL/releases/latest/download/proxpl -O proxpl
-          chmod +x proxpl
+          echo "Downloading ProXPL Windows build..."
+          wget "https://productionresultssa3.blob.core.windows.net/actions-results/83bd440b-bb18-404b-80ae-21d042ac3e74/workflow-job-run-cc876aa5-cf38-5099-8127-6a74e93e70d7/artifacts/57715cf0d07387d8fd3e0a5637d87164aab2df7cfbc3b657fe5466062ff673b6.zip?rscd=attachment%3B+filename%3D%22ProXPL-v1.2.0-windows-latest.zip%22&se=2026-02-17T10%3A26%3A11Z&sig=yyxBpKIQFoPQtSdPEXzyei%2BN5yS6rHVe%2BxlbVbG5Quw%3D&ske=2026-02-17T14%3A02%3A04Z&skoid=ca7593d4-ee42-46cd-af88-8b886a2f84eb&sks=b&skt=2026-02-17T10%3A02%3A04Z&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skv=2025-11-05&sp=r&spr=https&sr=b&st=2026-02-17T10%3A16%3A06Z&sv=2025-11-05" -O proxpl.zip
+          unzip proxpl.zip
+          chmod +x proxpl || chmod +x proxpl.exe || true
+          ls -la
           
       - name: Verify ProXPL Installation
         run: |

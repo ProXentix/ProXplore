@@ -1,0 +1,29 @@
+{
+    "project_info": {
+        "project_number": "835818355780",
+        "project_id": "proxplore-proxentix",
+        "storage_bucket": "proxplore-proxentix.firebasestorage.app"
+    },
+    "client": [
+        {
+            "client_info": {
+                "mobilesdk_app_id": "1:835818355780:android:f977463fdc70437ddb5011",
+                "android_client_info": {
+                    "package_name": "com.proxentix.proxplore"
+                }
+            },
+            "oauth_client": [],
+            "api_key": [
+                {
+                    "current_key": "AIzaSyARNNlsGqYrw9yamqgZ4Yy5YBAIRDw0K6A"
+                }
+            ],
+            "services": {
+                "appinvite_service": {
+                    "other_platform_oauth_client": []
+                }
+            }
+        }
+    ],
+    "configuration_version": "1"
+}

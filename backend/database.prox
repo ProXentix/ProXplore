@@ -1,0 +1,37 @@
+use "std.io";
+use "std.fs";
+
+// Struct to hold search results
+struct Result {
+    title string;
+    url string;
+}
+
+// Function to save a result to a file (acting as our database/index)
+func save_result(res Result) void {
+    // Open the file in append mode. 
+    // Assuming std.fs has an open function similar to other systems languages.
+    // In a real scenario, we might use FFI for fopen/fwrite if std.fs is limited.
+    let file = fs.open("index.json", "a");
+    
+    // Construct a simple JSON object string
+    // ProXPL string interpolation or concatenation wasn't explicitly defined, 
+    // so we'll assume + for concatenation or standard format.
+    let json_entry = "{\"title\": \"" + res.title + "\", \"url\": \"" + res.url + "\"}\n";
+    
+    // Write to file
+    file.write(json_entry);
+    file.close();
+    
+    print("Saved result: " + res.title);
+}
+
+// Entry point for testing this module
+func main() {
+    let sample = Result {
+        title: "ProXplore Home",
+        url: "http://proxplore.com"
+    };
+    
+    save_result(sample);
+}

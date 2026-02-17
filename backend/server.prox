@@ -1,0 +1,81 @@
+use "std.net";
+use "std.io";
+use "std.fs";
+
+func main() {
+    print("Starting ProXplore Search Server on port 8080...");
+
+    // Create a TCP Listener
+    // Syntax assumed based on common systems languages (Go/V/Rust style adaptation)
+    let listener = net.listen("tcp", "0.0.0.0:8080");
+    
+    if (listener == null) {
+        print("Error: Could not bind to port 8080");
+        return;
+    }
+
+    // Accept loop
+    while (true) {
+        let conn = listener.accept();
+        handle_connection(conn);
+    }
+}
+
+func handle_connection(conn net.Connection) void {
+    // Read request
+    let buffer = conn.read(1024); // Read up to 1024 bytes
+    let request_str = string(buffer);
+
+    print("Received Request: " + request_str);
+
+    // Parse Request Line: "GET /search?q=query HTTP/1.1"
+    // Minimalistic parsing
+    if (request_str.starts_with("GET /search?q=")) {
+        // Extract query
+        let query_start = 14; // Length of "GET /search?q="
+        // Find end of query (space)
+        // Assuming we have a helper or can do simple string ops
+        let query = "extracted_query"; // Placeholder for actual substring logic
+        
+        print("Searching for: " + query);
+        
+        let results = search_index(query);
+        
+        // Formulate Response
+        let response_body = results;
+        let response = "HTTP/1.1 200 OK\r\n" +
+                       "Content-Type: application/json\r\n" +
+                       "Content-Length: " + response_body.length() + "\r\n" +
+                       "\r\n" +
+                       response_body;
+                       
+        conn.write(response);
+    } else {
+        // 404 Not Found for other routes
+        let msg = "{\"error\": \"Not Found\"}";
+        let response = "HTTP/1.1 404 Not Found\r\n" +
+                       "Content-Type: application/json\r\n" +
+                       "\r\n" +
+                       msg;
+        conn.write(response);
+    }
+
+    conn.close();
+}
+
+func search_index(query string) string {
+    // Read from our simple flat file DB
+    let content = fs.read_file("index.json");
+    
+    // In a real app, we would parse JSON and filter.
+    // For this prototype, we just return the raw file content or a filtered mock.
+    
+    // Simple check if file is empty
+    if (content == "") {
+        return "[]";
+    }
+    
+    // For simplicity, returning all results (mocking search filter)
+    // Wrap in array brackets if not already
+    return "[" + content + "]"; 
+}

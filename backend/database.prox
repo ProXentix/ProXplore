@@ -1,35 +1,34 @@
 use "std.io";
 use "std.fs";
-use "std.string"; // Assuming standard string lib for length, replace, etc.
+use "std.string";
 
 // Struct to hold search results
 struct Result {
     title string;
     url string;
-    content string; // Added content field for snippet/body
+    content string;
 }
 
 // Helper to escape special characters for JSON
+// This prevents the DB from breaking if a title has "quotes" or newlines
 func escape_json(s string) string {
     let result = "";
     let len = s.length();
-    
-    // Iterate through string (assuming array-like access or iterator)
-    // Since ProXPL syntax for iteration isn't fully detailed, using a while loop with index
     let i = 0;
+    
     while (i < len) {
-        let char = s[i]; // Access character
+        let char = s[i];
         
         if (char == '\"') {
-            result = result + "\\\"";
+            result = result + "\\\""; // Escape quote
         } else if (char == '\\') {
-            result = result + "\\\\";
+            result = result + "\\\\"; // Escape backslash
         } else if (char == '\n') {
-            result = result + "\\n";
+            result = result + " ";    // Replace newline with space
         } else if (char == '\r') {
-            result = result + "\\r";
+            result = result + "";     // Remove carriage return
         } else if (char == '\t') {
-            result = result + "\\t";
+            result = result + " ";    // Replace tab with space
         } else {
             result = result + char;
         }
@@ -40,38 +39,29 @@ func escape_json(s string) string {
     return result;
 }
 
-// Function to append a result to the index file (NDJSON)
+// Function to append a result to the index file (NDJSON format)
 func append_to_index(title string, url string, content string) void {
-    // Escape fields to ensure valid JSON
+    // 1. Clean and Escape Data
     let safe_title = escape_json(title);
     let safe_url = escape_json(url);
-    // Truncate content if too long to save space/memory (optional, but good for search snippets)
-    let safe_content = escape_json(content); 
+    
+    // Truncate content to 200 chars to save space (Snippet only)
+    let safe_content = escape_json(content);
+    if (safe_content.length() > 200) {
+        safe_content = safe_content.substring(0, 200) + "...";
+    }
 
-    // Construct NDJSON string: {"title": "...", "url": "...", "content": "..."}
+    // 2. Format: {"title": "...", "url": "...", "content": "..."}
     let json_entry = "{\"title\": \"" + safe_title + "\", \"url\": \"" + safe_url + "\", \"content\": \"" + safe_content + "\"}\n";
     
-    // Open file in append mode
-    // error handling omitted for brevity/prototype, but recommended
+    // 3. Append to file
     let file = fs.open("index.json", "a");
     
     if (file != null) {
         file.write(json_entry);
         file.close();
-        // Feedback to stdout
-        print("Indexed: " + safe_title);
+        print("[DB] Indexed: " + safe_title);
     } else {
-        print("Error: Could not open index.json for writing.");
+        print("[DB] Error: Could not open index.json");
     }
-}
-
-// Entry point for testing/usage
-func main() {
-    // This main is just for testing the database module standalone
-    print("Testing Database Module...");
-    
-    append_to_index("ProXplore Home", "http://proxplore.com", "Welcome to the ProXplore search engine.");
-    append_to_index("Test Page with \"Quotes\"", "http://test.com", "This content has \n newlines and \"quotes\" to test escaping.");
-    
-    print("Done.");
 }

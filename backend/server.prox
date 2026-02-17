@@ -1,12 +1,151 @@
 use "std.net";
 use "std.io";
 use "std.fs";
+use "std.string";
+
+// Struct to represent a search result
+struct SearchResult {
+    title string;
+    url string;
+    content string;
+}
+
+// Function to parse a single line of NDJSON
+// Returns a SearchResult object or null if invalid
+func parse_json_line(line string) SearchResult {
+    // Very basic manual parsing for "title":"...", "url":"...", "content":"..."
+    // In a real system, use a proper JSON parser.
+    
+    // Helper to extract value by key
+    func extract_value(json string, key string) string {
+        let key_pattern = "\"" + key + "\": \"";
+        let start = json.index_of(key_pattern);
+        if (start == -1) { return ""; }
+        
+        start = start + key_pattern.length();
+        let end = json.index_of("\"", start);
+        
+        // Handle escaped quotes? For simplicity, assuming simple structure or next quote is end.
+        // A robust parser would march through characters handling escapes.
+        
+        if (end == -1) { return ""; }
+        
+        return json.substring(start, end);
+    }
+    
+    let title = extract_value(line, "title");
+    let url = extract_value(line, "url");
+    let content = extract_value(line, "content");
+    
+    if (title == "" && url == "") { return null; }
+    
+    return SearchResult {
+        title: title,
+        url: url,
+        content: content
+    };
+}
+
+func search_index(query string) string {
+    let results = []; // Array to store matching SearchResults
+    let query_lower = query.to_lower();
+    
+    // Open the index file
+    let file = fs.open("index.json", "r");
+    if (file == null) {
+        return "[]";
+    }
+    
+    // Read line by line
+    // Assuming file.read_line() returns string or null on EOF
+    let count = 0;
+    let max_results = 20;
+    
+    while (true) {
+        let line = file.read_line();
+        if (line == null) { break; }
+        
+        // Parse JSON
+        let item = parse_json_line(line);
+        
+        if (item != null) {
+            // Check for match
+            // Case-insensitive inclusion check
+            if (item.title.to_lower().contains(query_lower) || item.content.to_lower().contains(query_lower)) {
+                results.push(item);
+                count = count + 1;
+            }
+        }
+        
+        if (count >= max_results) { break; }
+    }
+    
+    file.close();
+    
+    // Convert results array to JSON string
+    return array_to_json(results);
+}
+
+// Helper to convert SearchResult array to JSON string
+func array_to_json(results array) string {
+    let json = "[";
+    let i = 0;
+    while (i < results.length()) {
+        let item = results[i];
+        if (i > 0) { json = json + ","; }
+        
+        json = json + "{\"title\": \"" + item.title + "\", \"url\": \"" + item.url + "\"}";
+        i = i + 1;
+    }
+    json = json + "]";
+    return json;
+}
+
+func handle_connection(conn net.Connection) void {
+    let buffer = conn.read(1024);
+    let request_str = string(buffer);
+    
+    print("Received Request: " + request_str);
+
+    // Parse Request: "GET /search?q=query HTTP/1.1"
+    if (request_str.starts_with("GET /search?q=")) {
+        let query_start = 14; 
+        let query_end = request_str.index_of(" ", query_start);
+        if (query_end == -1) { query_end = request_str.length(); }
+        
+        let query_raw = request_str.substring(query_start, query_end);
+        
+        // Decode URL encoding (e.g., %20 -> space) if needed
+        // For now, using raw query
+        let query = query_raw.replace("%20", " ");
+        
+        print("Searching for: " + query);
+        
+        let json_response = search_index(query);
+        
+        let response = "HTTP/1.1 200 OK\r\n" +
+                       "Content-Type: application/json\r\n" +
+                       "Access-Control-Allow-Origin: *\r\n" + // CORS for React Native dev
+                       "Content-Length: " + json_response.length() + "\r\n" +
+                       "\r\n" +
+                       json_response;
+                       
+        conn.write(response);
+    } else {
+        let msg = "{\"error\": \"Not Found\"}";
+        let response = "HTTP/1.1 404 Not Found\r\n" +
+                       "Content-Type: application/json\r\n" +
+                       "Content-Length: " + msg.length() + "\r\n" +
+                       "\r\n" +
+                       msg;
+        conn.write(response);
+    }
+    
+    conn.close();
+}
 
 func main() {
     print("Starting ProXplore Search Server on port 8080...");
-
-    // Create a TCP Listener
-    // Syntax assumed based on common systems languages (Go/V/Rust style adaptation)
     let listener = net.listen("tcp", "0.0.0.0:8080");
     
     if (listener == null) {
@@ -14,68 +153,8 @@ func main() {
         return;
     }
 
-    // Accept loop
     while (true) {
         let conn = listener.accept();
         handle_connection(conn);
     }
-}
-
-func handle_connection(conn net.Connection) void {
-    // Read request
-    let buffer = conn.read(1024); // Read up to 1024 bytes
-    let request_str = string(buffer);
-
-    print("Received Request: " + request_str);
-
-    // Parse Request Line: "GET /search?q=query HTTP/1.1"
-    // Minimalistic parsing
-    if (request_str.starts_with("GET /search?q=")) {
-        // Extract query
-        let query_start = 14; // Length of "GET /search?q="
-        // Find end of query (space)
-        // Assuming we have a helper or can do simple string ops
-        let query = "extracted_query"; // Placeholder for actual substring logic
-        
-        print("Searching for: " + query);
-        
-        let results = search_index(query);
-        
-        // Formulate Response
-        let response_body = results;
-        let response = "HTTP/1.1 200 OK\r\n" +
-                       "Content-Type: application/json\r\n" +
-                       "Content-Length: " + response_body.length() + "\r\n" +
-                       "\r\n" +
-                       response_body;
-                       
-        conn.write(response);
-    } else {
-        // 404 Not Found for other routes
-        let msg = "{\"error\": \"Not Found\"}";
-        let response = "HTTP/1.1 404 Not Found\r\n" +
-                       "Content-Type: application/json\r\n" +
-                       "\r\n" +
-                       msg;
-        conn.write(response);
-    }
-
-    conn.close();
-}
-
-func search_index(query string) string {
-    // Read from our simple flat file DB
-    let content = fs.read_file("index.json");
-    
-    // In a real app, we would parse JSON and filter.
-    // For this prototype, we just return the raw file content or a filtered mock.
-    
-    // Simple check if file is empty
-    if (content == "") {
-        return "[]";
-    }
-    
-    // For simplicity, returning all results (mocking search filter)
-    // Wrap in array brackets if not already
-    return "[" + content + "]"; 
 }

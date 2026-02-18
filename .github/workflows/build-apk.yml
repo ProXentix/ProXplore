@@ -45,15 +45,15 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      # ── 7. Build debug APK (no signing needed) ───────────────────────────────
-      - name: Build debug APK
+      # ── 7. Build release APK (signed with debug key per gradle config) ───────
+      - name: Build release APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon
+        run: ./gradlew assembleRelease --no-daemon
 
-      # ── 8. Upload debug APK ───────────────────────────────────────────────────
-      - name: Upload debug APK
+      # ── 8. Upload release APK ────────────────────────────────────────────────
+      - name: Upload release APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug.apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: app-release.apk
+          path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30

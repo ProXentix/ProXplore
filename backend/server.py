@@ -19,14 +19,18 @@ def load_index():
     """Loads index.json into memory"""
     global memory_db
     
-    if not os.path.exists('index.json'):
-        print("ERROR: index.json not found. Run crawler.py first!")
+    # Get the directory where server.py is located
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    index_path = os.path.join(base_dir, 'index.json')
+    
+    if not os.path.exists(index_path):
+        print(f"ERROR: index.json not found at {index_path}. Run crawler.py first!")
         return
     
-    print("Loading index.json into RAM...")
+    print(f"Loading {index_path} into RAM...")
     
     try:
-        with open('index.json', 'r', encoding='utf-8') as f:
+        with open(index_path, 'r', encoding='utf-8') as f:
             for line_num, line in enumerate(f, 1):
                 line = line.strip()
                 if line:
@@ -42,6 +46,7 @@ def load_index():
         
     except Exception as e:
         print(f"Error loading index: {e}")
+
 
 
 def calculate_score(item, query_lower):

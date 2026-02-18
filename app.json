@@ -11,9 +11,6 @@
     "runtimeVersion": {
       "policy": "appVersion"
     },
-    "updates": {
-      "url": "https://u.expo.dev/14d6e132-3012-4f88-82b5-6ef7d3514fc2"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -45,11 +42,6 @@
       "expo-font",
       "@react-native-firebase/app",
       "@react-native-firebase/auth"
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "14d6e132-3012-4f88-82b5-6ef7d3514fc2"
-      }
-    }
+    ]
   }
 }

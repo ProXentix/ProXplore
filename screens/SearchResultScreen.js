@@ -25,8 +25,8 @@ export default function SearchResultScreen({ route }) {
         try {
             // Android Emulator localhost: 10.0.2.2
             // If testing on real device, replace with your PC IP (e.g., 192.168.1.5)
-            // CURRENT IP: 192.168.42.60
-            const response = await fetch(`http://192.168.42.60:8080/search?q=${encodeURIComponent(query)}`);
+            // Render Backend: https://proxplore.onrender.com
+            const response = await fetch(`https://proxplore.onrender.com/search?q=${encodeURIComponent(query)}`);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }

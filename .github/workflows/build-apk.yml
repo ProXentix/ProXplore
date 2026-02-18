@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build APK
 
 on:
   push:
@@ -8,39 +8,52 @@ on:
 
 jobs:
   build:
-    name: Build Android APK
+    name: Build APK
     runs-on: ubuntu-latest
 
     steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Node.js
+      # ── 2. Node.js ───────────────────────────────────────────────────────────
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Prebuild Android Project
-        run: npx expo prebuild --platform android --clean
+      # ── 3. Java ──────────────────────────────────────────────────────────────
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-      - name: Build APK with Gradle
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug
+      # ── 4. Android SDK ───────────────────────────────────────────────────────
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Upload APK
+      # ── 5. Expo prebuild (generates android/ folder, no EAS) ─────────────────
+      - name: Run expo prebuild
+        run: npx expo prebuild --platform android --clean --no-install
+
+      # ── 6. Make gradlew executable ───────────────────────────────────────────
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      # ── 7. Build debug APK (no signing needed) ───────────────────────────────
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      # ── 8. Upload debug APK ───────────────────────────────────────────────────
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: ProXplore-debug.apk
+          name: app-debug.apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30

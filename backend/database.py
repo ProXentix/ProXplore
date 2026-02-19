@@ -6,7 +6,6 @@ Handles JSON escaping and NDJSON formatting
 import json
 import re
 
-
 def escape_json(text):
     """
     Escapes special characters for JSON strings

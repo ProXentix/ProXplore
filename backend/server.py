@@ -8,6 +8,7 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from ranking import BM25Ranker
+from query_processor import QueryProcessor
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for mobile app
@@ -15,6 +16,7 @@ CORS(app)  # Enable CORS for mobile app
 # In-memory database
 memory_db = []
 ranker = BM25Ranker()
+processor = QueryProcessor()
 
 
 def load_index():
@@ -49,6 +51,7 @@ def load_index():
         # Train Ranker
         if memory_db:
             ranker.fit(memory_db)
+            processor.fit(memory_db)
         
     except Exception as e:
         print(f"Error loading index: {e}")
@@ -126,6 +129,7 @@ def home():
         'version': '1.0',
         'endpoints': {
             'search': '/search?q=your_query',
+            'suggest': '/suggest?q=prefix',
             'health': '/health'
         },
         'total_indexed': len(memory_db)
@@ -139,6 +143,20 @@ def health():
         'status': 'healthy',
         'indexed_pages': len(memory_db)
     })
+
+
+@app.route('/suggest')
+def suggest():
+    """
+    Auto-complete suggestions endpoint
+    Query parameter: q (prefix)
+    """
+    prefix = request.args.get('q', '')
+    if not prefix:
+        return jsonify([])
+        
+    suggestions = processor.get_suggestions(prefix)
+    return jsonify(suggestions)
 
 
 @app.route('/search')
@@ -157,13 +175,34 @@ def search():
     
     print(f"Searching for: {query}")
     
-    results = search_index(query)
+    # Process Query (Spell check & Expansion)
+    processed = processor.process_query(query)
     
-    return jsonify({
+    # Use the expanded query for better recall
+    # But failover to original if expansion is too broad? 
+    # For now, let's use the expanded query for ranking
+    search_query = processed['expanded']
+    if not search_query.strip():
+        search_query = query # Fallback
+        
+    results = search_index(search_query)
+    
+    # If no results and correction was made, try searching strictly for correction
+    if not results and processed['was_corrected']:
+         # Try with just the corrected version (without synonyms first)
+         results = search_index(processed['corrected'])
+    
+    response = {
         'query': query,
         'results': results,
         'total_results': len(results)
-    })
+    }
+    
+    # Add correction info if applicable
+    if processed['was_corrected']:
+        response['did_you_mean'] = processed['corrected']
+        
+    return jsonify(response)
 
 
 def main():

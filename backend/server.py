@@ -7,12 +7,14 @@ import json
 import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from ranking import BM25Ranker
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for mobile app
 
 # In-memory database
 memory_db = []
+ranker = BM25Ranker()
 
 
 def load_index():
@@ -44,50 +46,17 @@ def load_index():
         
         print(f"✓ Loaded {len(memory_db)} items into memory")
         
+        # Train Ranker
+        if memory_db:
+            ranker.fit(memory_db)
+        
     except Exception as e:
         print(f"Error loading index: {e}")
 
 
-
-def calculate_score(item, query_lower):
-    """
-    Calculates relevance score for a search result
-    
-    Args:
-        item (dict): Search result item
-        query_lower (str): Lowercase search query
-        
-    Returns:
-        int: Relevance score
-    """
-    score = 1  # Base score
-    
-    title_lower = item['title'].lower()
-    content_lower = item['content'].lower()
-    url_lower = item['url'].lower()
-    
-    # Title match bonus (higher weight)
-    if query_lower in title_lower:
-        score += 10
-    
-    # Content match bonus
-    if query_lower in content_lower:
-        score += 5
-    
-    # URL match bonus
-    if query_lower in url_lower:
-        score += 3
-    
-    # Super boost for proxentix/proxpl domains
-    if 'proxentix' in url_lower or 'proxpl' in url_lower:
-        score += 1000
-    
-    return score
-
-
 def search_index(query):
     """
-    Searches the in-memory index
+    Searches the in-memory index using BM25 and heuristics
     
     Args:
         query (str): Search query
@@ -101,20 +70,46 @@ def search_index(query):
     query_lower = query.lower().strip()
     results = []
     
-    for item in memory_db:
+    for i, item in enumerate(memory_db):
+        # Calculate BM25 score
+        bm25_score = ranker.get_score(query, i)
+        
+        # Heuristic: Check for exact phrase/substring match
+        # This helps with partial word matches that BM25 (word-based) might miss
+        is_substring_match = False
         title_lower = item['title'].lower()
         content_lower = item['content'].lower()
+        url_lower = item['url'].lower()
         
-        # Check if query matches
         if query_lower in title_lower or query_lower in content_lower:
-            score = calculate_score(item, query_lower)
+            is_substring_match = True
             
-            results.append({
-                'title': item['title'],
-                'url': item['url'],
-                'score': score,
-                'snippet': item['content'][:200]  # First 200 chars as snippet
-            })
+        # Filter: Must match either via BM25 (words) or substring
+        if bm25_score <= 0 and not is_substring_match:
+            continue
+            
+        final_score = bm25_score
+        
+        # Boosts
+        if is_substring_match:
+            final_score += 5.0  # Boost for phrase match
+            
+        if query_lower in title_lower:
+            final_score += 10.0 # Extra boost if in title
+            
+        if query_lower in url_lower:
+            final_score += 3.0
+            
+        # Super boost for proxentix/proxpl domains
+        if 'proxentix' in url_lower or 'proxpl' in url_lower:
+            final_score += 1000
+            
+        results.append({
+            'title': item['title'],
+            'url': item['url'],
+            'score': final_score,
+            'snippet': item['content'][:200]  # First 200 chars as snippet
+        })
     
     # Sort by score (descending)
     results.sort(key=lambda x: x['score'], reverse=True)

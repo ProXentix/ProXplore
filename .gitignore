@@ -46,3 +46,9 @@ yarn-error.*
 # ProXPL Runtime (not needed in repo)
 *.exe
 proxpl_extracted/
+
+# Data files
+index.json
+bm25_index.pkl
+__pycache__/
+*.pyc

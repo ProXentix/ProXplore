@@ -5,7 +5,7 @@ Provides search API with ranking and CORS support
 
 import json
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from ranking import BM25Ranker
 from query_processor import QueryProcessor
@@ -148,17 +148,8 @@ def search_index(query):
 
 @app.route('/')
 def home():
-    """Home endpoint"""
-    return jsonify({
-        'message': 'Welcome to ProXplore API',
-        'version': '1.1',
-        'endpoints': {
-            'search': '/search?q=your_query',
-            'suggest': '/suggest?q=prefix',
-            'health': '/health'
-        },
-        'total_indexed': len(memory_db)
-    })
+    """Home endpoint - Serves Web Interface"""
+    return render_template('index.html')
 
 
 @app.route('/health')
@@ -167,7 +158,8 @@ def health():
     return jsonify({
         'status': 'healthy',
         'indexed_pages': len(memory_db),
-        'vocabulrry_size': len(ranker.idf)
+        'vocabulrry_size': len(ranker.idf),
+        'index_status': 'loaded' if len(memory_db) > 0 else 'empty_or_missing'
     })
 
 

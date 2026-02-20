@@ -47,8 +47,9 @@ yarn-error.*
 *.exe
 proxpl_extracted/
 
+
 # Data files
-index.json
-bm25_index.pkl
+# index.json  <-- Commented out to ensure it is deployed
+# bm25_index.pkl <-- Commented out (or remove if you want to rebuild on server, but keeping consistent)
 __pycache__/
 *.pyc

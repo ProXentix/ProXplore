@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProXplore - Search</title>
+    <style>
+        :root {
+            --primary: #9333ea;
+            --secondary: #ec4899;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 2rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        .search-box {
+            width: 100%;
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            font-size: 1.1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            transition: all 0.2s;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]:focus {
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            border-color: var(--primary);
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 999px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .search-btn:hover {
+            background: #7e22ce;
+        }
+
+        #results {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .result-card {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            transition: transform 0.2s;
+        }
+
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .result-url {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .result-title {
+            color: #2563eb;
+            font-size: 1.25rem;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-title:hover {
+            text-decoration: underline;
+        }
+
+        .result-snippet {
+            color: var(--text);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .loading {
+            margin-top: 2rem;
+            display: none;
+            color: var(--text-light);
+        }
+
+        .no-results {
+            text-align: center;
+            color: var(--text-light);
+            margin-top: 2rem;
+            display: none;
+        }
+
+        /* Suggestions */
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            margin-top: 5px;
+            z-index: 10;
+            overflow: hidden;
+            display: none;
+            border: 1px solid var(--border);
+        }
+
+        .suggestion-item {
+            padding: 10px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text);
+        }
+
+        .suggestion-item:hover {
+            background-color: #f1f5f9;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="logo">ProXplore</div>
+        
+        <div class="search-box">
+            <input type="text" id="query" placeholder="Search the web..." autocomplete="off">
+            <button class="search-btn" onclick="performSearch()">Search</button>
+            <div id="suggestions" class="suggestions"></div>
+        </div>
+
+        <div id="loading" class="loading">Searching...</div>
+        <div id="no-results" class="no-results">No results found</div>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const queryInput = document.getElementById('query');
+        const resultsContainer = document.getElementById('results');
+        const loadingDiv = document.getElementById('loading');
+        const noResultsDiv = document.getElementById('no-results');
+        const suggestionsDiv = document.getElementById('suggestions');
+
+        // Execute search on 'Enter' key
+        queryInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+                suggestionsDiv.style.display = 'none';
+            }
+        });
+
+        // Simple autocomplete
+        queryInput.addEventListener('input', async function() {
+            const val = this.value;
+            if (val.length < 2) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/suggest?q=${encodeURIComponent(val)}`);
+                const data = await res.json();
+                
+                if (data.length > 0) {
+                    suggestionsDiv.innerHTML = data.map(s => 
+                        `<div class="suggestion-item" onclick="selectSuggestion('${s}')">
+                            <span style="color: #cbd5e1;">🔍</span> ${s}
+                        </div>`
+                    ).join('');
+                    suggestionsDiv.style.display = 'block';
+                } else {
+                    suggestionsDiv.style.display = 'none';
+                }
+            } catch (e) {
+                // simple ignore
+            }
+        });
+
+        function selectSuggestion(text) {
+            queryInput.value = text;
+            suggestionsDiv.style.display = 'none';
+            performSearch();
+        }
+
+        // Close suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!document.querySelector('.search-box').contains(e.target)) {
+                suggestionsDiv.style.display = 'none';
+            }
+        });
+
+        async function performSearch() {
+            const query = queryInput.value.trim();
+            if (!query) return;
+
+            // Update UI
+            resultsContainer.innerHTML = '';
+            loadingDiv.style.display = 'block';
+            noResultsDiv.style.display = 'none';
+
+            try {
+                const response = await fetch(`/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                loadingDiv.style.display = 'none';
+
+                if (data.results && data.results.length > 0) {
+                    let html = '';
+                    data.results.forEach(item => {
+                        html += `
+                        <div class="result-card">
+                            <div class="result-url">
+                                <span>🌐</span> ${item.url}
+                            </div>
+                            <a href="${item.url}" class="result-title" target="_blank">${item.title}</a>
+                            <div class="result-snippet">${item.snippet || ''}</div>
+                        </div>
+                        `;
+                    });
+                    resultsContainer.innerHTML = html;
+                } else {
+                    noResultsDiv.style.display = 'block';
+                    if (data.did_you_mean) {
+                        noResultsDiv.innerHTML = `No results found for "<b>${query}</b>". <br>Did you mean <a href="#" onclick="selectSuggestion('${data.did_you_mean}')">${data.did_you_mean}</a>?`;
+                    } else {
+                        noResultsDiv.textContent = `No results found for "${query}"`;
+                    }
+                }
+
+            } catch (error) {
+                loadingDiv.style.display = 'none';
+                resultsContainer.innerHTML = `<p style="color: red; text-align: center;">Error fetching results: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
